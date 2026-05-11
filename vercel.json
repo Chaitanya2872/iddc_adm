@@ -1,7 +1,7 @@
 {
-  "installCommand": "npm --prefix admin-web install",
-  "buildCommand": "npm --prefix admin-web run build",
-  "outputDirectory": "admin-web/dist",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/(.*)",
