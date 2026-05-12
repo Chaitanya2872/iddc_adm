@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { KeyRound, LogOut, Search, Shield, Users } from "lucide-react";
+import { LogOut, Search, Shield, Users } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,7 @@ import { setStoredToken } from "@/lib/api";
 
 const navItems = [
   { icon: Shield, href: "/structures", label: "Structures" },
-  { icon: Users, href: "/structures", label: "Users" },
-  { icon: KeyRound, href: "/structures", label: "Access" }
+  { icon: Users, href: "/users-access", label: "Users & Access" }
 ];
 
 interface AppShellProps {
@@ -57,7 +56,7 @@ export function AppShell({ children, searchValue = "", onSearchChange, action }:
         <nav className="mt-3 flex flex-col gap-1.5">
           {navItems.map((item, index) => {
             const Icon = item.icon;
-            const active = location.pathname.startsWith(item.href) && index === 0;
+            const active = location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
             return (
               <Link
                 className={cn(
@@ -108,7 +107,7 @@ export function AppShell({ children, searchValue = "", onSearchChange, action }:
               <Search className="h-4 w-4 text-slate-400" />
               <Input
                 className="h-auto border-0 bg-transparent p-0 shadow-none ring-0 focus:border-0 focus:ring-0"
-                placeholder="Search structures, owners, UID or city"
+                placeholder="Search workspace records"
                 value={searchValue}
                 onChange={(e) => onSearchChange?.(e.target.value)}
               />

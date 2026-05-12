@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { TokenGate } from "@/components/TokenGate";
 import { StructuresPage } from "@/pages/StructuresPage";
 import { StructureDetailPage } from "@/pages/StructureDetailPage";
+import { UsersAccessPage } from "@/pages/UsersAccessPage";
 
 export default function App() {
   return (
@@ -21,6 +22,14 @@ export default function App() {
         element={
           <TokenGate>
             <StructureDetailPage />
+          </TokenGate>
+        }
+      />
+      <Route
+        path="/users-access"
+        element={
+          <TokenGate>
+            <UsersAccessPage />
           </TokenGate>
         }
       />

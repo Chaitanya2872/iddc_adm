@@ -6,6 +6,8 @@ import type {
   AdminFloorsResponse,
   AdminLocationResponse,
   AdminRatingsResponse,
+  AdminUser,
+  AdminUserPayload,
   ApiResponse,
   AuthLoginResponse,
   SystemStats
@@ -133,6 +135,26 @@ export const api = {
     request<AdminFlatsResponse>(`/api/admin/structures/${id}/flats`),
   getAdminStructureRatings: (id: string) =>
     request<AdminRatingsResponse>(`/api/admin/structures/${id}/ratings`),
+  getAdminUsers: () => request<AdminUser[]>("/api/admin/users"),
+  getAdminUser: (id: string) => request<AdminUser>(`/api/admin/users/${id}`),
+  createAdminUser: (payload: AdminUserPayload) =>
+    request<AdminUser>("/api/admin/users", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+  updateAdminUser: (id: string, payload: Partial<AdminUserPayload>) =>
+    request<AdminUser>(`/api/admin/users/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload)
+    }),
+  resetAdminUserPassword: (id: string) =>
+    request<{ user_id: string; username: string; temporary_password: string }>(`/api/admin/users/${id}/reset-password`, {
+      method: "POST"
+    }),
+  deactivateAdminUser: (id: string) =>
+    request<undefined>(`/api/admin/users/${id}`, {
+      method: "DELETE"
+    }),
   getSystemStats: () => request<SystemStats>("/api/admin/system-stats"),
   downloadStructureReportPdf: (id: string) =>
     downloadFile(`/api/reports/structures/${id}/download?format=pdf`, `structure-${id}.pdf`),

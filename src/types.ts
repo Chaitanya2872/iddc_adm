@@ -341,5 +341,66 @@ export interface SystemStats {
   };
   users?: {
     active?: number;
+    total?: number;
   };
+}
+
+export type UserRole = "AD" | "TE" | "VE" | "FE" | string;
+
+export interface ModuleAccess {
+  read: boolean;
+  write: boolean;
+}
+
+export interface AdminUserPermissions {
+  can_create_structures?: boolean;
+  can_approve_structures?: boolean;
+  can_delete_structures?: boolean;
+  can_view_all_structures?: boolean;
+  can_export_reports?: boolean;
+  can_manage_users?: boolean;
+  modules: {
+    users: ModuleAccess;
+    structures: ModuleAccess;
+    reports: ModuleAccess;
+    admin: ModuleAccess;
+  };
+}
+
+export interface AdminUserProfile {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  organization?: string;
+  designation?: string;
+  employee_id?: string;
+  address?: string;
+}
+
+export interface AdminUser {
+  _id: string;
+  username: string;
+  email: string;
+  role: UserRole;
+  roles?: UserRole[];
+  profile?: AdminUserProfile;
+  permissions: AdminUserPermissions;
+  is_active?: boolean;
+  isEmailVerified?: boolean;
+  structure_count?: number;
+  last_login?: string;
+  created_at?: string;
+  updated_at?: string;
+  temporary_password?: string;
+}
+
+export interface AdminUserPayload {
+  username: string;
+  email: string;
+  role: UserRole;
+  roles?: UserRole[];
+  profile?: AdminUserProfile;
+  is_active?: boolean;
+  isEmailVerified?: boolean;
+  permissions: AdminUserPermissions;
 }
