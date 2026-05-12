@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Building2, Gauge, LayoutGrid, LogOut, Search, Settings, Shield } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ interface AppShellProps {
 
 export function AppShell({ children, searchValue = "", onSearchChange, action }: AppShellProps) {
   const location = useLocation();
+  const [expanded, setExpanded] = useState(false);
 
   const handleLogout = () => {
     setStoredToken("");
@@ -30,10 +31,28 @@ export function AppShell({ children, searchValue = "", onSearchChange, action }:
   };
 
   return (
-    <div className="grid min-h-screen grid-cols-[84px_minmax(0,1fr)] bg-[#f4f7fb]">
-      <aside className="sticky top-0 flex h-screen flex-col gap-4 border-r border-slate-200/70 bg-[#0f172a] px-4 py-5 text-white">
-        <div className="grid h-14 w-14 place-items-center rounded-[20px] bg-[linear-gradient(135deg,#8b5cf6_0%,#6d28d9_100%)] text-lg font-bold text-white shadow-lg shadow-violet-500/20">
-          S
+    <div
+      className="grid min-h-screen bg-[#f4f7fb] transition-[grid-template-columns] duration-300 ease-out"
+      style={{ gridTemplateColumns: expanded ? "248px minmax(0,1fr)" : "88px minmax(0,1fr)" }}
+    >
+      <aside
+        className="sticky top-0 flex h-screen flex-col gap-4 border-r border-slate-200/70 bg-[radial-gradient(circle_at_top,#1e293b_0%,#0f172a_45%,#020617_100%)] px-4 py-5 text-white shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)]"
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
+      >
+        <div className={cn("flex items-center gap-3 overflow-hidden rounded-[22px] border border-white/10 bg-white/5 p-2 transition-all duration-300", expanded ? "pr-4" : "w-14 justify-center")}>
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[16px] bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_45%,#22c55e_100%)] text-lg font-bold text-white shadow-lg shadow-sky-500/20">
+            S
+          </div>
+          <div
+            className={cn(
+              "min-w-0 transition-all duration-200",
+              expanded ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-2 opacity-0"
+            )}
+          >
+            <p className="text-sm font-semibold tracking-[0.14em] text-white/80">SAMS</p>
+            <p className="text-xs text-white/45">Admin workspace</p>
+          </div>
         </div>
         <nav className="mt-2 flex flex-col gap-3">
           {navItems.map((item, index) => {
@@ -42,23 +61,43 @@ export function AppShell({ children, searchValue = "", onSearchChange, action }:
             return (
               <Link
                 className={cn(
-                  "grid h-14 w-14 place-items-center rounded-[18px] border border-transparent text-white/70 transition hover:bg-white/10 hover:text-white",
-                  active && "border-white/10 bg-white text-slate-950"
+                  "flex h-14 items-center gap-3 overflow-hidden rounded-[18px] border border-transparent px-4 text-white/70 transition-all duration-300 hover:border-white/10 hover:bg-white/10 hover:text-white",
+                  !expanded && "w-14 justify-center px-0",
+                  active && "border-white/10 bg-white text-slate-950 shadow-[0_8px_30px_rgba(255,255,255,0.18)]"
                 )}
                 key={`${item.label}-${index}`}
                 to={item.href}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="h-5 w-5 shrink-0" />
+                <span
+                  className={cn(
+                    "whitespace-nowrap text-sm font-medium transition-all duration-200",
+                    expanded ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-2 opacity-0"
+                  )}
+                >
+                  {item.label}
+                </span>
               </Link>
             );
           })}
         </nav>
         <button
-          className="mt-auto grid h-14 w-14 place-items-center rounded-[18px] border border-white/10 text-white/70 transition hover:bg-white/10 hover:text-white"
+          className={cn(
+            "mt-auto flex h-14 items-center gap-3 overflow-hidden rounded-[18px] border border-white/10 px-4 text-white/70 transition-all duration-300 hover:bg-white/10 hover:text-white",
+            !expanded && "w-14 justify-center px-0"
+          )}
           onClick={handleLogout}
           type="button"
         >
-          <LogOut className="h-5 w-5" />
+          <LogOut className="h-5 w-5 shrink-0" />
+          <span
+            className={cn(
+              "whitespace-nowrap text-sm font-medium transition-all duration-200",
+              expanded ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-2 opacity-0"
+            )}
+          >
+            Log out
+          </span>
         </button>
       </aside>
 

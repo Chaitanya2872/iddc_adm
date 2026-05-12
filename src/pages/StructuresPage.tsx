@@ -223,25 +223,12 @@ export function StructuresPage() {
             >
               <Link to={`/structures/${structure.structure_id}`}>
                 <Card className="overflow-hidden rounded-[30px] border-slate-200/70 transition duration-200 hover:-translate-y-1 hover:shadow-soft">
-                  <CardContent className="grid gap-5 p-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-                    <div className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(145deg,#eef2ff_0%,#c7d2fe_48%,#1e293b_100%)]">
-                      <div className="absolute left-4 top-4 z-10">
-                        <Badge tone={structure.status}>{formatStatus(structure.status)}</Badge>
-                      </div>
-                      <div className="flex min-h-[220px] flex-col justify-end bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.65),transparent_24%),linear-gradient(180deg,transparent,rgba(15,23,42,0.22))] p-4">
-                        <div className="rounded-[20px] border border-white/40 bg-white/15 p-3 backdrop-blur">
-                          <p className="text-[11px] uppercase tracking-[0.18em] text-white/70">Structure</p>
-                          <p className="mt-2 text-lg font-semibold text-white">
-                            {structure.structure_number || structure.uid || "Pending identity"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
+                  <CardContent className="p-5">
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
                           <div className="mb-2 flex flex-wrap gap-2">
+                            <Badge tone={structure.status}>{formatStatus(structure.status)}</Badge>
                             <Badge>{structure.type || "Structure"}</Badge>
                             {structure.uid ? <Badge>{structure.uid}</Badge> : null}
                           </div>
@@ -253,15 +240,19 @@ export function StructuresPage() {
                             {structure.location?.state || "Unknown state"}
                           </p>
                         </div>
-                        <div className="text-left lg:text-right">
-                          <div className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+                        <div className="rounded-[24px] border border-sky-100 bg-[linear-gradient(135deg,#f8fbff_0%,#eef6ff_100%)] px-4 py-3 text-left lg:min-w-[220px] lg:text-right">
+                          <div className="flex items-center gap-3 lg:justify-end">
+                            <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.12)]" />
+                            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Live record</span>
+                          </div>
+                          <div className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
                             {formatDate(structure.last_updated || structure.created_date)}
                           </div>
                           <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">Last updated</p>
                         </div>
                       </div>
 
-                      <div className="grid gap-3 md:grid-cols-3">
+                      <div className="grid gap-3 md:grid-cols-4">
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                           <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Owner</p>
                           <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
@@ -280,28 +271,34 @@ export function StructuresPage() {
                           <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Type</p>
                           <div className="mt-2 text-sm font-semibold text-slate-800">{structure.type || "Not set"}</div>
                         </div>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Identity</p>
+                          <div className="mt-2 text-sm font-semibold text-slate-800">
+                            {structure.structure_number || structure.uid || "Pending identity"}
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="grid gap-4 border-t border-slate-200 pt-4 md:grid-cols-4">
-                        <div>
+                      <div className="grid gap-3 border-t border-slate-200 pt-4 md:grid-cols-4">
+                        <div className="rounded-2xl bg-slate-50 px-4 py-3">
                           <p className="text-2xl font-semibold tracking-[-0.05em] text-slate-950">
                             {ratingSummary?.completion_percentage ?? 0}%
                           </p>
                           <p className="text-xs text-slate-500">Rating completion</p>
                         </div>
-                        <div>
+                        <div className="rounded-2xl bg-slate-50 px-4 py-3">
                           <p className="text-2xl font-semibold tracking-[-0.05em] text-slate-950">
                             {ratingSummary?.avg_structural_rating ?? "-"}
                           </p>
                           <p className="text-xs text-slate-500">Structural rating</p>
                         </div>
-                        <div>
+                        <div className="rounded-2xl bg-slate-50 px-4 py-3">
                           <p className="text-2xl font-semibold tracking-[-0.05em] text-slate-950">
                             {ratingSummary?.overall_health || "Unrated"}
                           </p>
                           <p className="text-xs text-slate-500">Health status</p>
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#fffbeb_100%)] px-4 py-3">
                           <div>
                             <p className="text-2xl font-semibold tracking-[-0.05em] text-slate-950">Open</p>
                             <p className="text-xs text-slate-500">View details</p>

@@ -48,6 +48,11 @@ function formatRating(value?: number | null) {
   return value.toFixed(2);
 }
 
+function formatNumber(value?: number | null) {
+  if (value === undefined || value === null || Number.isNaN(value)) return "";
+  return String(value);
+}
+
 function formatComponentLabel(value: string) {
   return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
@@ -215,6 +220,14 @@ export function StructureDetailPage() {
       {
         label: "Address",
         value: locationData?.location?.address || structure?.location?.address || ""
+      },
+      {
+        label: "Latitude",
+        value: formatNumber(locationData?.location?.latitude)
+      },
+      {
+        label: "Longitude",
+        value: formatNumber(locationData?.location?.longitude)
       }
     ];
   }, [locationData, structure]);
@@ -279,6 +292,13 @@ export function StructureDetailPage() {
         value: administrativeData?.administrative?.custodian || structure.administration?.custodian || ""
       },
       {
+        label: "Engineer Designation",
+        value:
+          administrativeData?.administrative?.engineer_designation ||
+          structure.administration?.engineer_designation ||
+          ""
+      },
+      {
         label: "Contact",
         value:
           administrativeData?.administrative?.contact_details ||
@@ -335,8 +355,14 @@ export function StructureDetailPage() {
       return {
         id: floor.mongodb_id || floor.floor_id,
         name: floor.floor_label_name || `Floor ${floor.floor_number ?? ""}`.trim(),
+        floorNumber: floor.floor_number,
         flats: floor.number_of_flats || 0,
         blocks: blockMap.get(floor.floor_id) || 0,
+        height: formatNumber(floor.floor_height),
+        area: formatNumber(floor.total_area_sq_mts),
+        isParking: floor.is_parking_floor ? "Yes" : "No",
+        parkingType: floor.parking_floor_type || "",
+        notes: floor.floor_notes || "",
         overallAverage: formatRating(
           ratingRow?.floor_overall_rating?.overall_average ?? ratingRow?.floor_overall_rating?.combined_score
         ),
@@ -352,7 +378,13 @@ export function StructureDetailPage() {
     return (flatsData?.flats || []).map((flat) => ({
       id: flat.flat_id || `${flat.floor_id}-${flat.flat_number}`,
       floorName: flat.floor_label_name || `Floor ${flat.floor_number ?? ""}`.trim(),
+      floorNumber: flat.floor_number,
       flatNumber: flat.flat_number || "",
+      flatType: flat.flat_type || "",
+      area: formatNumber(flat.area_sq_mts),
+      directionFacing: flat.direction_facing || "",
+      occupancyStatus: flat.occupancy_status || "",
+      notes: flat.flat_notes || "",
       combinedScore: formatRating(flat.flat_overall_rating?.combined_score),
       healthStatus: flat.flat_overall_rating?.health_status || "",
       priority: flat.flat_overall_rating?.priority || "",
@@ -558,7 +590,7 @@ export function StructureDetailPage() {
                         {locationDetails.map((item) => (
                           <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-3" key={item.label}>
                             <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
-                            <p className="mt-2 text-[15px] font-medium text-slate-900">{item.value || " "}</p>
+                            <p className="mt-2 break-words text-[15px] font-medium text-slate-900">{item.value || " "}</p>
                           </div>
                         ))}
                       </div>
@@ -572,7 +604,7 @@ export function StructureDetailPage() {
                         {adminDetails.map((item) => (
                           <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-3" key={item.label}>
                             <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
-                            <p className="mt-2 text-[15px] font-medium text-slate-900">{item.value || " "}</p>
+                            <p className="mt-2 break-words text-[15px] font-medium text-slate-900">{item.value || " "}</p>
                           </div>
                         ))}
                       </div>
@@ -595,13 +627,20 @@ export function StructureDetailPage() {
                     {floorCards.map((floor) => (
                       <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-3" key={floor.id || floor.name}>
                         <div className="flex items-center justify-between">
-                          <div className="text-[16px] font-medium text-slate-900">{floor.name}</div>
+                          <div>
+                            <div className="text-[16px] font-medium text-slate-900">{floor.name}</div>
+                            <p className="text-xs text-slate-500">ID: {floor.id || "N/A"}</p>
+                          </div>
                           <Building2 className="h-4 w-4 text-slate-400" />
                         </div>
                         <p className="mt-2 text-xs leading-5 text-slate-500">
                           Admin points: this floor contains {floor.flats} flats, {floor.blocks} blocks, and carries a priority of {floor.priority || "not set"}.
                         </p>
                         <div className="mt-3 grid grid-cols-2 gap-2">
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Floor No</p>
+                            <p className="mt-1 text-lg font-medium text-slate-950">{floor.floorNumber ?? " "}</p>
+                          </div>
                           <div className="rounded-2xl bg-white px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Flats</p>
                             <p className="mt-1 text-lg font-medium text-slate-950">{floor.flats}</p>
@@ -610,7 +649,40 @@ export function StructureDetailPage() {
                             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Blocks</p>
                             <p className="mt-1 text-lg font-medium text-slate-950">{floor.blocks}</p>
                           </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Height</p>
+                            <p className="mt-1 text-sm font-medium text-slate-950">{floor.height || " "}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Area Sq Mts</p>
+                            <p className="mt-1 text-sm font-medium text-slate-950">{floor.area || " "}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Parking Floor</p>
+                            <p className="mt-1 text-sm font-medium text-slate-950">{floor.isParking}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Parking Type</p>
+                            <p className="mt-1 text-sm font-medium text-slate-950">{floor.parkingType || " "}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Overall Avg</p>
+                            <p className="mt-1 text-sm font-medium text-slate-950">{floor.overallAverage || " "}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Health</p>
+                            <p className="mt-1 text-sm font-medium text-slate-950">{floor.healthStatus || " "}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Structural Avg</p>
+                            <p className="mt-1 text-sm font-medium text-slate-950">{floor.structuralAverage || " "}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Non-Structural Avg</p>
+                            <p className="mt-1 text-sm font-medium text-slate-950">{floor.nonStructuralAverage || " "}</p>
+                          </div>
                         </div>
+                        {floor.notes ? <p className="mt-3 text-xs leading-5 text-slate-500">Notes: {floor.notes}</p> : null}
                       </div>
                     ))}
                   </div>
@@ -630,6 +702,7 @@ export function StructureDetailPage() {
                           <div>
                             <p className="text-[15px] font-medium text-slate-900">{flat.flatNumber || "Unnamed Flat"}</p>
                             <p className="text-xs text-slate-500">{flat.floorName}</p>
+                            <p className="text-xs text-slate-400">ID: {flat.id}</p>
                           </div>
                           <Home className="h-4 w-4 text-slate-400" />
                         </div>
@@ -637,6 +710,22 @@ export function StructureDetailPage() {
                           Admin points: health is {flat.healthStatus || "not set"}, priority is {flat.priority || "not set"}, and combined score is {flat.combinedScore || "pending"}.
                         </p>
                         <div className="mt-3 grid grid-cols-2 gap-2">
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Type</p>
+                            <p className="mt-1 text-sm font-medium text-slate-900">{flat.flatType || " "}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Area Sq Mts</p>
+                            <p className="mt-1 text-sm font-medium text-slate-900">{flat.area || " "}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Facing</p>
+                            <p className="mt-1 text-sm font-medium text-slate-900">{flat.directionFacing || " "}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white px-3 py-2">
+                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Occupancy</p>
+                            <p className="mt-1 text-sm font-medium text-slate-900">{flat.occupancyStatus || " "}</p>
+                          </div>
                           <div className="rounded-2xl bg-white px-3 py-2">
                             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Combined</p>
                             <p className="mt-1 text-sm font-medium text-slate-900">{flat.combinedScore || " "}</p>
@@ -654,6 +743,7 @@ export function StructureDetailPage() {
                             <p className="mt-1 text-sm font-medium text-slate-900">{flat.nonStructuralAverage || " "}</p>
                           </div>
                         </div>
+                        {flat.notes ? <p className="mt-3 text-xs leading-5 text-slate-500">Notes: {flat.notes}</p> : null}
                       </div>
                     ))}
                   </div>
