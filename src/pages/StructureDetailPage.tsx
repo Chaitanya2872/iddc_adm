@@ -11,13 +11,16 @@ import {
   Layers3,
   MapPinned,
   FolderKanban,
-  MapPin
+  MapPin,
+  Search,
+  X
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import type {
   AdminAdministrativeResponse,
@@ -25,7 +28,10 @@ import type {
   AdminFloorsResponse,
   AdminLocationResponse,
   AdminRatingsResponse,
-  AdminStructureDetail
+  AdminStructureDetail,
+  StructureWorkflowResponse,
+  TestingAssignmentUser,
+  TestingFormatOption
 } from "@/types";
 
 function formatStatus(value?: string) {
@@ -214,11 +220,23 @@ export function StructureDetailPage() {
   const [floorsData, setFloorsData] = useState<AdminFloorsResponse | null>(null);
   const [flatsData, setFlatsData] = useState<AdminFlatsResponse | null>(null);
   const [ratingsData, setRatingsData] = useState<AdminRatingsResponse | null>(null);
+  const [workflowData, setWorkflowData] = useState<StructureWorkflowResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [downloadError, setDownloadError] = useState<string>("");
   const [downloading, setDownloading] = useState<"pdf" | "word" | "">("");
   const [activeTab, setActiveTab] = useState<"location" | "floors" | "flats" | "ratings">("location");
+  const [selectedRatingFloorId, setSelectedRatingFloorId] = useState<string>("");
+  const [testingPanelOpen, setTestingPanelOpen] = useState(false);
+  const [testers, setTesters] = useState<TestingAssignmentUser[]>([]);
+  const [testingFormats, setTestingFormats] = useState<TestingFormatOption[]>([]);
+  const [testerQuery, setTesterQuery] = useState("");
+  const [selectedTesterIds, setSelectedTesterIds] = useState<string[]>([]);
+  const [selectedFormatIds, setSelectedFormatIds] = useState<string[]>([]);
+  const [panelLoading, setPanelLoading] = useState(false);
+  const [panelSubmitting, setPanelSubmitting] = useState(false);
+  const [panelError, setPanelError] = useState("");
+  const [panelMessage, setPanelMessage] = useState("");
 
   useEffect(() => {
     let ignore = false;
@@ -227,14 +245,15 @@ export function StructureDetailPage() {
       try {
         setLoading(true);
         setError("");
-        const [detailResponse, locationResponse, administrativeResponse, floorsResponse, flatsResponse, ratingsResponse] =
+        const [detailResponse, locationResponse, administrativeResponse, floorsResponse, flatsResponse, ratingsResponse, workflowResponse] =
           await Promise.all([
             api.getAdminStructure(id),
             api.getAdminStructureLocation(id),
             api.getAdminStructureAdministrative(id),
             api.getAdminStructureFloors(id),
             api.getAdminStructureFlats(id),
-            api.getAdminStructureRatings(id)
+            api.getAdminStructureRatings(id),
+            api.getAdminStructureWorkflow(id)
           ]);
 
         if (!ignore) {
@@ -244,6 +263,7 @@ export function StructureDetailPage() {
           setFloorsData(floorsResponse.data || null);
           setFlatsData(flatsResponse.data || null);
           setRatingsData(ratingsResponse.data || null);
+          setWorkflowData(workflowResponse.data || null);
         }
       } catch (loadError) {
         if (!ignore) {
@@ -578,6 +598,64 @@ export function StructureDetailPage() {
     }));
   }, [structure]);
 
+  const selectedDetailedFloorRating = useMemo(() => {
+    if (!detailedFloorRatings.length) return null;
+
+    return (
+      detailedFloorRatings.find((floor) => floor.id === selectedRatingFloorId) ||
+      detailedFloorRatings[0]
+    );
+  }, [detailedFloorRatings, selectedRatingFloorId]);
+
+  const filteredTesters = useMemo(() => {
+    const normalizedQuery = testerQuery.trim().toLowerCase();
+    if (!normalizedQuery) return testers;
+
+    return testers.filter((tester) =>
+      [tester.username, tester.email, tester.designation]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(normalizedQuery))
+    );
+  }, [testerQuery, testers]);
+
+  const selectedTesterItems = useMemo(
+    () => testers.filter((tester) => tester._id && selectedTesterIds.includes(tester._id)),
+    [selectedTesterIds, testers]
+  );
+
+  const selectedFormatItems = useMemo(
+    () => testingFormats.filter((format) => selectedFormatIds.includes(format.format_id)),
+    [selectedFormatIds, testingFormats]
+  );
+
+  useEffect(() => {
+    if (!detailedFloorRatings.length) {
+      setSelectedRatingFloorId("");
+      return;
+    }
+
+    setSelectedRatingFloorId((current) => {
+      if (current && detailedFloorRatings.some((floor) => floor.id === current)) {
+        return current;
+      }
+      return detailedFloorRatings[0].id;
+    });
+  }, [detailedFloorRatings]);
+
+  useEffect(() => {
+    if (!workflowData?.testing_assignment) return;
+
+    const testerIds = (workflowData.testing_assignment.testers || [])
+      .map((tester) => tester.user_id)
+      .filter((value): value is string => Boolean(value));
+    const formatIds = (workflowData.testing_assignment.testing_formats || [])
+      .map((format) => format.format_id)
+      .filter((value): value is string => Boolean(value));
+
+    setSelectedTesterIds(testerIds);
+    setSelectedFormatIds(formatIds);
+  }, [workflowData]);
+
   const tabItems = [
     { key: "location", label: "Location", icon: MapPinned },
     { key: "floors", label: "Floors", icon: Layers3 },
@@ -602,14 +680,77 @@ export function StructureDetailPage() {
     }
   };
 
+  const openTestingPanel = async () => {
+    setTestingPanelOpen(true);
+    setPanelError("");
+    setPanelMessage("");
+
+    if (testers.length && testingFormats.length) return;
+
+    try {
+      setPanelLoading(true);
+      const [testerResponse, formatResponse] = await Promise.all([
+        api.getAdminTesters(),
+        api.getAdminTestingFormats()
+      ]);
+      setTesters(testerResponse.data || []);
+      setTestingFormats(formatResponse.data || []);
+    } catch (loadError) {
+      setPanelError(loadError instanceof Error ? loadError.message : "Failed to load testing assignment data");
+    } finally {
+      setPanelLoading(false);
+    }
+  };
+
+  const toggleTesterSelection = (testerId?: string) => {
+    if (!testerId) return;
+    setSelectedTesterIds((current) =>
+      current.includes(testerId) ? current.filter((id) => id !== testerId) : [...current, testerId]
+    );
+  };
+
+  const toggleFormatSelection = (formatId: string) => {
+    setSelectedFormatIds((current) =>
+      current.includes(formatId) ? current.filter((id) => id !== formatId) : [...current, formatId]
+    );
+  };
+
+  const submitMoveToTesting = async () => {
+    if (!id) return;
+
+    try {
+      setPanelSubmitting(true);
+      setPanelError("");
+      setPanelMessage("");
+      const response = await api.moveAdminStructureToTesting(id, {
+        tester_ids: selectedTesterIds,
+        testing_formats: selectedFormatIds
+      });
+      setWorkflowData(response.data || null);
+      setStructure((current) =>
+        current ? { ...current, status: response.data?.status || current.status } : current
+      );
+      setPanelMessage(response.message || "Structure moved to testing successfully");
+    } catch (submitError) {
+      setPanelError(submitError instanceof Error ? submitError.message : "Failed to move structure to testing");
+    } finally {
+      setPanelSubmitting(false);
+    }
+  };
+
   return (
     <AppShell
-      action={
-        <Button asChild className="rounded-full px-4" variant="outline">
-          <Link to="/structures">
+      headerLeft={
+        <Button asChild className="h-10 w-10 rounded-md p-0" variant="outline">
+          <Link to="/structures" aria-label="Back to structures">
             <ArrowLeft className="h-4 w-4" />
-            Back to list
           </Link>
+        </Button>
+      }
+      hideSearch
+      action={
+        <Button className="rounded-md px-4" onClick={() => void openTestingPanel()}>
+          Move to Testing
         </Button>
       }
     >
@@ -739,6 +880,34 @@ export function StructureDetailPage() {
                           </div>
                         ))}
                       </div>
+                      <div className="mt-3">
+                        {mapEmbedUrl ? (
+                          <>
+                            <div className="overflow-hidden rounded-[18px] border border-slate-200">
+                              <iframe
+                                className="h-[300px] w-full"
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                src={mapEmbedUrl}
+                                title="Structure location map"
+                              />
+                            </div>
+                            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                              <span>
+                                Coordinates: <span className="font-medium text-slate-900">{mapCoordinates?.latitude}</span>,{" "}
+                                <span className="font-medium text-slate-900">{mapCoordinates?.longitude}</span>
+                              </span>
+                              <a className="font-medium text-slate-700 hover:text-slate-950" href={mapOpenUrl} rel="noreferrer" target="_blank">
+                                Open in Maps
+                              </a>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                            Latitude and longitude are not available for this structure yet.
+                          </div>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -765,42 +934,6 @@ export function StructureDetailPage() {
                   </Card>
                   </div>
 
-                  <Card className="rounded-[22px] border-slate-200 shadow-none">
-                    <CardContent className="p-4">
-                      <div className="mb-3 flex items-center justify-between">
-                        <p className="admin-section-title">Map View</p>
-                        <MapPinned className="h-4 w-4 text-slate-400" />
-                      </div>
-                      {mapEmbedUrl ? (
-                        <>
-                          <div className="overflow-hidden rounded-[18px] border border-slate-200 bg-slate-50">
-                            <iframe
-                              className="h-[340px] w-full"
-                              loading="lazy"
-                              referrerPolicy="no-referrer-when-downgrade"
-                              src={mapEmbedUrl}
-                              title="Structure location map"
-                            />
-                          </div>
-                          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-3">
-                            <p className="text-sm text-slate-600">
-                              Coordinates: <span className="font-medium text-slate-900">{mapCoordinates?.latitude}</span>,{" "}
-                              <span className="font-medium text-slate-900">{mapCoordinates?.longitude}</span>
-                            </p>
-                            <Button asChild className="rounded-md px-4" variant="outline">
-                              <a href={mapOpenUrl} rel="noreferrer" target="_blank">
-                                Open in Maps
-                              </a>
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
-                          Latitude and longitude are not available for this structure yet.
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
                 </div>
               ) : null}
 
@@ -964,7 +1097,28 @@ export function StructureDetailPage() {
                   </Card>
 
                   {floorWiseRatingRows.length ? (
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid gap-3">
+                      <div className="rounded-[18px] border border-slate-200 bg-white p-3">
+                        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">Select floor</p>
+                            <p className="text-xs text-slate-500">Review one floor at a time in the ratings section.</p>
+                          </div>
+                          <select
+                            className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900"
+                            value={selectedDetailedFloorRating?.id || ""}
+                            onChange={(event) => setSelectedRatingFloorId(event.target.value)}
+                          >
+                            {floorWiseRatingRows.map((floor) => (
+                              <option key={floor.id} value={floor.id}>
+                                {floor.floorName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                       {floorWiseRatingRows.map((floor) => (
                         <div className="rounded-[18px] border border-slate-200 bg-white p-3" key={floor.id}>
                           <div className="flex items-start justify-between gap-2">
@@ -995,16 +1149,16 @@ export function StructureDetailPage() {
                           {floor.priority ? <p className="mt-2 text-xs text-slate-500">Priority: {floor.priority}</p> : null}
                         </div>
                       ))}
+                      </div>
                     </div>
                   ) : null}
 
-                  {detailedFloorRatings.length ? (
+                  {selectedDetailedFloorRating ? (
                     <div className="grid gap-4">
-                      {detailedFloorRatings.map((floor) => (
-                        <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4" key={floor.id}>
+                        <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4" key={selectedDetailedFloorRating.id}>
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <div className="text-[16px] font-medium text-slate-900">{floor.floorName}</div>
+                              <div className="text-[16px] font-medium text-slate-900">{selectedDetailedFloorRating.floorName}</div>
                               <p className="mt-1 text-xs leading-5 text-slate-500">
                                 Detailed ratings for this floor, including individual structural and non-structural components.
                               </p>
@@ -1015,36 +1169,35 @@ export function StructureDetailPage() {
                           <div className="mt-3 grid gap-2 md:grid-cols-3 xl:grid-cols-6">
                             <div className="rounded-2xl bg-white px-3 py-2">
                               <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Structural Avg</p>
-                              <p className="mt-1 text-sm font-medium text-slate-900">{floor.structuralAverage || " "}</p>
+                              <p className="mt-1 text-sm font-medium text-slate-900">{selectedDetailedFloorRating.structuralAverage || " "}</p>
                             </div>
                             <div className="rounded-2xl bg-white px-3 py-2">
                               <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Non-Structural Avg</p>
-                              <p className="mt-1 text-sm font-medium text-slate-900">{floor.nonStructuralAverage || " "}</p>
+                              <p className="mt-1 text-sm font-medium text-slate-900">{selectedDetailedFloorRating.nonStructuralAverage || " "}</p>
                             </div>
                             <div className="rounded-2xl bg-white px-3 py-2">
                               <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Health</p>
-                              <p className="mt-1 text-sm font-medium text-slate-900">{floor.healthStatus || " "}</p>
+                              <p className="mt-1 text-sm font-medium text-slate-900">{selectedDetailedFloorRating.healthStatus || " "}</p>
                             </div>
                             <div className="rounded-2xl bg-white px-3 py-2">
                               <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Priority</p>
-                              <p className="mt-1 text-sm font-medium text-slate-900">{floor.priority || " "}</p>
+                              <p className="mt-1 text-sm font-medium text-slate-900">{selectedDetailedFloorRating.priority || " "}</p>
                             </div>
                             <div className="rounded-2xl bg-white px-3 py-2">
                               <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Structural Items</p>
-                              <p className="mt-1 text-sm font-medium text-slate-900">{floor.structuralCount}</p>
+                              <p className="mt-1 text-sm font-medium text-slate-900">{selectedDetailedFloorRating.structuralCount}</p>
                             </div>
                             <div className="rounded-2xl bg-white px-3 py-2">
                               <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Non-Structural Items</p>
-                              <p className="mt-1 text-sm font-medium text-slate-900">{floor.nonStructuralCount}</p>
+                              <p className="mt-1 text-sm font-medium text-slate-900">{selectedDetailedFloorRating.nonStructuralCount}</p>
                             </div>
                           </div>
 
                           <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                            <RatingGroupPanel groups={floor.structuralGroups} title="Structural Ratings" />
-                            <RatingGroupPanel groups={floor.nonStructuralGroups} title="Non-Structural Ratings" />
+                            <RatingGroupPanel groups={selectedDetailedFloorRating.structuralGroups} title="Structural Ratings" />
+                            <RatingGroupPanel groups={selectedDetailedFloorRating.nonStructuralGroups} title="Non-Structural Ratings" />
                           </div>
                         </div>
-                      ))}
                     </div>
                   ) : (
                     <div className="rounded-[20px] border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
@@ -1055,6 +1208,130 @@ export function StructureDetailPage() {
               ) : null}
             </CardContent>
           </Card>
+
+          {testingPanelOpen ? (
+            <div className="fixed inset-0 z-50">
+              <button
+                aria-label="Close testing panel"
+                className="absolute inset-0 bg-slate-950/30"
+                onClick={() => setTestingPanelOpen(false)}
+                type="button"
+              />
+              <aside className="absolute right-0 top-0 flex h-full w-full max-w-[460px] flex-col border-l border-slate-200 bg-white shadow-2xl">
+                <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">Move to Testing</p>
+                    <p className="text-xs text-slate-500">Assign testers and testing formats for this structure.</p>
+                  </div>
+                  <button
+                    className="rounded-md border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                    onClick={() => setTestingPanelOpen(false)}
+                    type="button"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
+                  {panelError ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">{panelError}</div> : null}
+                  {panelMessage ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{panelMessage}</div> : null}
+
+                  <section>
+                    <div className="mb-2">
+                      <p className="text-sm font-semibold text-slate-950">Assigned testers</p>
+                      <p className="text-xs text-slate-500">Search and choose one or more testing engineers.</p>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2">
+                      <Search className="h-4 w-4 text-slate-400" />
+                      <Input
+                        className="h-auto border-0 p-0 shadow-none focus:border-0 focus:ring-0"
+                        placeholder="Search testers"
+                        value={testerQuery}
+                        onChange={(event) => setTesterQuery(event.target.value)}
+                      />
+                    </div>
+                    <div className="mt-3 max-h-56 space-y-2 overflow-y-auto rounded-md border border-slate-200 p-2">
+                      {panelLoading ? (
+                        <p className="px-2 py-2 text-sm text-slate-500">Loading testers...</p>
+                      ) : filteredTesters.length ? (
+                        filteredTesters.map((tester) => (
+                          <label className="flex items-start gap-3 rounded-md border border-slate-200 px-3 py-2 hover:bg-slate-50" key={tester._id || tester.email}>
+                            <input
+                              checked={Boolean(tester._id && selectedTesterIds.includes(tester._id))}
+                              onChange={() => toggleTesterSelection(tester._id)}
+                              type="checkbox"
+                            />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-slate-900">{tester.username || "Unnamed tester"}</p>
+                              <p className="truncate text-xs text-slate-500">{tester.email || ""}</p>
+                              {tester.designation ? <p className="text-xs text-slate-400">{tester.designation}</p> : null}
+                            </div>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="px-2 py-2 text-sm text-slate-500">No testers found.</p>
+                      )}
+                    </div>
+                    {selectedTesterItems.length ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {selectedTesterItems.map((tester) => (
+                          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700" key={tester._id || tester.email}>
+                            {tester.username}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </section>
+
+                  <section>
+                    <div className="mb-2">
+                      <p className="text-sm font-semibold text-slate-950">Testing formats</p>
+                      <p className="text-xs text-slate-500">Enable the formats that should be used for this testing assignment.</p>
+                    </div>
+                    <div className="space-y-2 rounded-md border border-slate-200 p-2">
+                      {panelLoading ? (
+                        <p className="px-2 py-2 text-sm text-slate-500">Loading testing formats...</p>
+                      ) : testingFormats.length ? (
+                        testingFormats.map((format) => (
+                          <label className="flex items-start justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 hover:bg-slate-50" key={format.format_id}>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-slate-900">{format.display_name}</p>
+                              <p className="text-xs text-slate-500">{format.test_name}</p>
+                            </div>
+                            <input
+                              checked={selectedFormatIds.includes(format.format_id)}
+                              onChange={() => toggleFormatSelection(format.format_id)}
+                              type="checkbox"
+                            />
+                          </label>
+                        ))
+                      ) : (
+                        <p className="px-2 py-2 text-sm text-slate-500">No testing formats available.</p>
+                      )}
+                    </div>
+                    {selectedFormatItems.length ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {selectedFormatItems.map((format) => (
+                          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700" key={format.format_id}>
+                            {format.display_name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </section>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+                  <Button onClick={() => setTestingPanelOpen(false)} variant="outline">
+                    Cancel
+                  </Button>
+                  <Button disabled={panelSubmitting || panelLoading} onClick={() => void submitMoveToTesting()}>
+                    {panelSubmitting ? "Submitting..." : "Move to Testing"}
+                  </Button>
+                </div>
+              </aside>
+            </div>
+          ) : null}
         </>
       )}
     </AppShell>

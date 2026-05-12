@@ -85,6 +85,42 @@ export interface WorkflowInfo {
   rejected_by?: WorkflowActor;
 }
 
+export interface TestingAssignmentUser {
+  _id?: string;
+  user_id?: string;
+  username?: string;
+  email?: string;
+  role?: string;
+  designation?: string;
+}
+
+export interface TestingFormatOption {
+  format_id: string;
+  test_name: string;
+  display_name: string;
+  is_custom?: boolean;
+}
+
+export interface StructureWorkflowResponse {
+  status?: string;
+  workflow?: WorkflowInfo;
+  testing_assignment?: {
+    assigned_at?: string | null;
+    assigned_by?: {
+      user_id?: string;
+      name?: string;
+      email?: string;
+      role?: string;
+    } | null;
+    testers?: TestingAssignmentUser[];
+    testing_formats?: Array<{
+      format_id?: string;
+      test_name?: string;
+      display_name?: string;
+    }>;
+  };
+}
+
 export interface StructureFloor {
   _id?: string;
   floor_id?: string;

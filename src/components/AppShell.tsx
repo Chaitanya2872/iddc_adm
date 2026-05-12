@@ -16,9 +16,11 @@ interface AppShellProps {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   action?: ReactNode;
+  headerLeft?: ReactNode;
+  hideSearch?: boolean;
 }
 
-export function AppShell({ children, searchValue = "", onSearchChange, action }: AppShellProps) {
+export function AppShell({ children, searchValue = "", onSearchChange, action, headerLeft, hideSearch = false }: AppShellProps) {
   const location = useLocation();
   const [expanded, setExpanded] = useState(false);
 
@@ -61,13 +63,13 @@ export function AppShell({ children, searchValue = "", onSearchChange, action }:
               <Link
                 className={cn(
                   "flex h-11 items-center gap-3 overflow-hidden rounded-md border border-transparent px-3 text-slate-300 transition-colors duration-150 hover:bg-slate-700 hover:text-white",
-                  !expanded && "w-10 justify-center self-center px-0 text-slate-200",
+                  !expanded && "h-10 w-10 justify-center self-center px-0 text-slate-100",
                   active && "border-slate-600 bg-slate-700 text-white"
                 )}
                 key={`${item.label}-${index}`}
                 to={item.href}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className={cn("shrink-0", expanded ? "h-4 w-4" : "h-[15px] w-[15px]")} />
                 <span
                   className={cn(
                     "whitespace-nowrap text-sm font-medium transition-all duration-150",
@@ -83,12 +85,12 @@ export function AppShell({ children, searchValue = "", onSearchChange, action }:
         <button
           className={cn(
             "mt-auto flex h-11 items-center gap-3 overflow-hidden rounded-md border border-slate-700 px-3 text-slate-300 transition-colors duration-150 hover:bg-slate-700 hover:text-white",
-            !expanded && "w-10 justify-center self-center px-0 text-slate-200"
+            !expanded && "h-10 w-10 justify-center self-center px-0 text-slate-100"
           )}
           onClick={handleLogout}
           type="button"
         >
-          <LogOut className="h-4 w-4 shrink-0" />
+          <LogOut className={cn("shrink-0", expanded ? "h-4 w-4" : "h-[15px] w-[15px]")} />
           <span
             className={cn(
               "whitespace-nowrap text-sm font-medium transition-all duration-150",
@@ -103,15 +105,19 @@ export function AppShell({ children, searchValue = "", onSearchChange, action }:
       <main className="p-4 md:p-6">
         <div className="min-h-[calc(100vh-2rem)] rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
           <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex w-full max-w-xl items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-              <Search className="h-4 w-4 text-slate-400" />
-              <Input
-                className="h-auto border-0 bg-transparent p-0 shadow-none ring-0 focus:border-0 focus:ring-0"
-                placeholder="Search workspace records"
-                value={searchValue}
-                onChange={(e) => onSearchChange?.(e.target.value)}
-              />
-            </div>
+            {hideSearch ? (
+              <div className="flex items-center gap-2">{headerLeft}</div>
+            ) : (
+              <div className="flex w-full max-w-xl items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                <Search className="h-4 w-4 text-slate-400" />
+                <Input
+                  className="h-auto border-0 bg-transparent p-0 shadow-none ring-0 focus:border-0 focus:ring-0"
+                  placeholder="Search workspace records"
+                  value={searchValue}
+                  onChange={(e) => onSearchChange?.(e.target.value)}
+                />
+              </div>
+            )}
             <div className="flex items-center gap-2">
               {action}
             </div>

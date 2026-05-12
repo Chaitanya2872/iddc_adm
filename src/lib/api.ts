@@ -8,6 +8,9 @@ import type {
   AdminRatingsResponse,
   AdminUser,
   AdminUserPayload,
+  StructureWorkflowResponse,
+  TestingAssignmentUser,
+  TestingFormatOption,
   ApiResponse,
   AuthLoginResponse,
   SystemStats
@@ -156,6 +159,15 @@ export const api = {
     request<AdminFlatsResponse>(`/api/admin/structures/${id}/flats`),
   getAdminStructureRatings: (id: string) =>
     request<AdminRatingsResponse>(`/api/admin/structures/${id}/ratings`),
+  getAdminStructureWorkflow: (id: string) =>
+    request<StructureWorkflowResponse>(`/api/admin/structures/${id}/workflow`),
+  getAdminTesters: () => request<TestingAssignmentUser[]>("/api/admin/testers"),
+  getAdminTestingFormats: () => request<TestingFormatOption[]>("/api/admin/testing-formats"),
+  moveAdminStructureToTesting: (id: string, payload: { tester_ids: string[]; testing_formats: string[] }) =>
+    request<StructureWorkflowResponse>(`/api/admin/structures/${id}/move-to-testing`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
   getAdminUsers: () => request<AdminUser[]>("/api/admin/users"),
   getAdminUser: (id: string) => request<AdminUser>(`/api/admin/users/${id}`),
   createAdminUser: (payload: AdminUserPayload) =>

@@ -27,9 +27,19 @@ function formatDate(value?: string) {
   });
 }
 
-function hasMeaningfulHealth(value?: string | null) {
-  if (!value) return false;
-  return value.toLowerCase() !== "unrated";
+function getStructureLocationLabel(structure: AdminStructureCard) {
+  const city =
+    structure.location?.city ||
+    structure.location?.city_name ||
+    "";
+  const state =
+    structure.location?.state ||
+    structure.location?.state_code ||
+    "";
+  const address = structure.location?.address || "";
+
+  const primary = [city, state].filter(Boolean).join(", ");
+  return primary || address || "Location unavailable";
 }
 
 export function StructuresPage() {
@@ -217,8 +227,7 @@ export function StructuresPage() {
         <>
         <div className="grid gap-4">
           {structures.map((structure, index) => {
-            const ratingSummary = structure.ratings_summary;
-            const showHealthStatus = hasMeaningfulHealth(ratingSummary?.overall_health);
+            const locationLabel = getStructureLocationLabel(structure);
 
             return (
               <motion.div
@@ -242,8 +251,7 @@ export function StructuresPage() {
                             {structure.structure_number || structure.structure_name || "Unnamed Structure"}
                           </h2>
                           <p className="mt-1 text-sm text-slate-500">
-                            {structure.client_name || "No client name"} | {structure.location?.city || "Unknown city"},{" "}
-                            {structure.location?.state || "Unknown state"}
+                            {structure.client_name || "No client name"} | {locationLabel}
                           </p>
                         </div>
                         <div className="text-left lg:min-w-[160px] lg:text-right">
@@ -266,7 +274,7 @@ export function StructuresPage() {
                           <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Location</p>
                           <div className="mt-1.5 flex items-center gap-2 text-sm font-semibold text-slate-800">
                             <MapPin className="h-4 w-4 text-slate-400" />
-                            {structure.location?.city || "Unknown city"}
+                            {locationLabel}
                           </div>
                         </div>
                         <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
@@ -281,33 +289,13 @@ export function StructuresPage() {
                         </div>
                       </div>
 
-                      <div
-                        className={`grid gap-2 border-t border-slate-200 pt-3 ${
-                          showHealthStatus
-                            ? "md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_150px]"
-                            : "md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_150px]"
-                        }`}
-                      >
+                      <div className="grid gap-2 border-t border-slate-200 pt-3 md:grid-cols-[minmax(0,1fr)_150px]">
                         <div className="rounded-lg bg-slate-50 px-3 py-2.5">
-                          <p className="text-[1.8rem] font-semibold tracking-[-0.04em] text-slate-950">
-                            {ratingSummary?.completion_percentage ?? 0}%
+                          <p className="text-sm font-semibold text-slate-900">
+                            {structure.status ? formatStatus(structure.status) : "Draft"}
                           </p>
-                          <p className="text-[11px] text-slate-500">Rating completion</p>
+                          <p className="text-[11px] text-slate-500">Workflow status</p>
                         </div>
-                        <div className="rounded-lg bg-slate-50 px-3 py-2.5">
-                          <p className="text-[1.8rem] font-semibold tracking-[-0.04em] text-slate-950">
-                            {ratingSummary?.avg_structural_rating ?? "-"}
-                          </p>
-                          <p className="text-[11px] text-slate-500">Structural rating</p>
-                        </div>
-                        {showHealthStatus ? (
-                          <div className="rounded-lg bg-slate-50 px-3 py-2.5">
-                            <p className="text-[1.8rem] font-semibold tracking-[-0.04em] text-slate-950">
-                              {ratingSummary?.overall_health}
-                            </p>
-                            <p className="text-[11px] text-slate-500">Health status</p>
-                          </div>
-                        ) : null}
                         <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2.5">
                           <div className="min-w-0">
                             <p className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Open</p>
