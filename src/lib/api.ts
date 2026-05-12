@@ -82,7 +82,28 @@ async function downloadFile(path: string, fileName: string): Promise<void> {
     throw new Error("Failed to download report");
   }
 
+  const contentType = response.headers.get("content-type") || "";
+  const isPdfRequest = fileName.toLowerCase().endsWith(".pdf");
+
+  if (isPdfRequest && !contentType.toLowerCase().includes("application/pdf")) {
+    const responseText = await response.text();
+    try {
+      const parsed = JSON.parse(responseText) as { error?: string; message?: string };
+      throw new Error(parsed.error || parsed.message || "Invalid PDF response received");
+    } catch {
+      throw new Error("Invalid PDF response received from server");
+    }
+  }
+
   const blob = await response.blob();
+
+  if (isPdfRequest) {
+    const headerText = await blob.slice(0, 5).text().catch(() => "");
+    if (!headerText.startsWith("%PDF-")) {
+      throw new Error("Downloaded file is not a valid PDF");
+    }
+  }
+
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
