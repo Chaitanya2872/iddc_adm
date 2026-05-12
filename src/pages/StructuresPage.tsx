@@ -109,7 +109,7 @@ export function StructuresPage() {
   return (
     <AppShell
       action={
-        <Button className="rounded-full px-5" variant="outline">
+        <Button className="rounded-md px-4" variant="outline">
           <ShieldCheck className="h-4 w-4" />
           Verified admin
         </Button>
@@ -117,24 +117,24 @@ export function StructuresPage() {
       onSearchChange={setQuery}
       searchValue={query}
     >
-      <section className="mb-6 rounded-[30px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)] p-6">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+      <section className="mb-5 rounded-xl border border-slate-200 bg-white p-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
               Structure administration
             </div>
-            <h1 className="max-w-3xl text-4xl font-semibold tracking-[-0.05em] text-slate-950 md:text-5xl">
+            <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.04em] text-slate-950 md:text-4xl">
               All structures
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
               Browse every structure owned by the admin workspace and open each one into a focused detail view.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
             {summaryItems.map((item) => (
-              <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-3" key={item.label}>
-                <span className="text-xs uppercase tracking-[0.16em] text-slate-400">{item.label}</span>
-                <span className="ml-3 text-lg font-semibold tracking-[-0.03em] text-slate-950">{item.value}</span>
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5" key={item.label}>
+                <span className="text-[11px] uppercase tracking-[0.14em] text-slate-400">{item.label}</span>
+                <span className="ml-2.5 text-base font-semibold tracking-[-0.02em] text-slate-950">{item.value}</span>
               </div>
             ))}
           </div>
@@ -143,11 +143,11 @@ export function StructuresPage() {
 
       <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <Button className="rounded-full" variant="outline">
+          <Button className="rounded-md" variant="outline">
             <Filter className="h-4 w-4" />
             Filters
           </Button>
-          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
             <CalendarRange className="h-4 w-4 text-slate-400" />
             <Input
               className="h-auto w-[132px] border-0 bg-transparent p-0 text-sm shadow-none focus:border-0 focus:ring-0"
@@ -163,10 +163,10 @@ export function StructuresPage() {
               onChange={(e) => setDateTo(e.target.value)}
             />
           </div>
-          <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1">
+          <div className="inline-flex rounded-md border border-slate-200 bg-slate-100 p-1">
             {statusTabs.map((item) => (
               <button
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`rounded-md px-3 py-2 text-sm font-semibold transition ${
                   status === item ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"
                 }`}
                 key={item}
@@ -177,10 +177,10 @@ export function StructuresPage() {
               </button>
             ))}
           </div>
-          <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1">
+          <div className="inline-flex rounded-md border border-slate-200 bg-slate-100 p-1">
             {structureTypeOptions.map((item) => (
               <button
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`rounded-md px-3 py-2 text-sm font-semibold transition ${
                   structureType === item ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"
                 }`}
                 key={item}
@@ -199,11 +199,11 @@ export function StructuresPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-[28px] border border-slate-200 bg-white p-8 text-sm text-slate-500">Loading structures...</div>
+        <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Loading structures...</div>
       ) : error ? (
-        <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-sm font-medium text-rose-600">{error}</div>
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-sm font-medium text-rose-600">{error}</div>
       ) : structures.length === 0 ? (
-        <div className="rounded-[28px] border border-slate-200 bg-white p-10 text-center">
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
           <Building2 className="mx-auto h-10 w-10 text-slate-300" />
           <h3 className="mt-4 text-2xl font-black tracking-[-0.04em] text-slate-950">No structures found</h3>
           <p className="mt-2 text-sm text-slate-500">Try changing the search or filter selection.</p>
@@ -222,88 +222,84 @@ export function StructuresPage() {
               transition={{ duration: 0.35, delay: index * 0.04 }}
             >
               <Link to={`/structures/${structure.structure_id}`}>
-                <Card className="overflow-hidden rounded-[30px] border-slate-200/70 transition duration-200 hover:-translate-y-1 hover:shadow-soft">
-                  <CardContent className="p-5">
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div>
-                          <div className="mb-2 flex flex-wrap gap-2">
+                <Card className="overflow-hidden rounded-xl border-slate-200 transition duration-150 hover:border-slate-300 hover:shadow-md">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
                             <Badge tone={structure.status}>{formatStatus(structure.status)}</Badge>
-                            <Badge>{structure.type || "Structure"}</Badge>
+                            <Badge>{formatStatus(structure.type || "Structure")}</Badge>
                             {structure.uid ? <Badge>{structure.uid}</Badge> : null}
                           </div>
-                          <h2 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">
+                          <h2 className="text-[1.85rem] font-semibold leading-tight tracking-[-0.04em] text-slate-950">
                             {structure.structure_number || structure.structure_name || "Unnamed Structure"}
                           </h2>
-                          <p className="mt-2 text-base text-slate-500">
+                          <p className="mt-1 text-sm text-slate-500">
                             {structure.client_name || "No client name"} | {structure.location?.city || "Unknown city"},{" "}
                             {structure.location?.state || "Unknown state"}
                           </p>
                         </div>
-                        <div className="rounded-[24px] border border-sky-100 bg-[linear-gradient(135deg,#f8fbff_0%,#eef6ff_100%)] px-4 py-3 text-left lg:min-w-[220px] lg:text-right">
-                          <div className="flex items-center gap-3 lg:justify-end">
-                            <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.12)]" />
-                            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Live record</span>
-                          </div>
-                          <div className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+                        <div className="text-left lg:min-w-[160px] lg:text-right">
+                          <div className="text-xl font-semibold tracking-[-0.03em] text-slate-950">
                             {formatDate(structure.last_updated || structure.created_date)}
                           </div>
-                          <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">Last updated</p>
+                          <p className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-slate-400">Last updated</p>
                         </div>
                       </div>
 
-                      <div className="grid gap-3 md:grid-cols-4">
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Owner</p>
-                          <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
+                      <div className="grid gap-2 md:grid-cols-4">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                          <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Owner</p>
+                          <div className="mt-1.5 flex items-center gap-2 text-sm font-semibold text-slate-800">
                             <User2 className="h-4 w-4 text-slate-400" />
                             {structure.owner?.username || structure.owner?.email || "Unknown owner"}
                           </div>
                         </div>
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Location</p>
-                          <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                          <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Location</p>
+                          <div className="mt-1.5 flex items-center gap-2 text-sm font-semibold text-slate-800">
                             <MapPin className="h-4 w-4 text-slate-400" />
                             {structure.location?.city || "Unknown city"}
                           </div>
                         </div>
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Type</p>
-                          <div className="mt-2 text-sm font-semibold text-slate-800">{structure.type || "Not set"}</div>
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                          <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Type</p>
+                          <div className="mt-1.5 text-sm font-semibold text-slate-800">{structure.type || "Not set"}</div>
                         </div>
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                          <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Identity</p>
-                          <div className="mt-2 text-sm font-semibold text-slate-800">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                          <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Identity</p>
+                          <div className="mt-1.5 text-sm font-semibold text-slate-800">
                             {structure.structure_number || structure.uid || "Pending identity"}
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid gap-3 border-t border-slate-200 pt-4 md:grid-cols-4">
-                        <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                          <p className="text-2xl font-semibold tracking-[-0.05em] text-slate-950">
+                      <div className="grid gap-2 border-t border-slate-200 pt-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_150px]">
+                        <div className="rounded-lg bg-slate-50 px-3 py-2.5">
+                          <p className="text-[1.8rem] font-semibold tracking-[-0.04em] text-slate-950">
                             {ratingSummary?.completion_percentage ?? 0}%
                           </p>
-                          <p className="text-xs text-slate-500">Rating completion</p>
+                          <p className="text-[11px] text-slate-500">Rating completion</p>
                         </div>
-                        <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                          <p className="text-2xl font-semibold tracking-[-0.05em] text-slate-950">
+                        <div className="rounded-lg bg-slate-50 px-3 py-2.5">
+                          <p className="text-[1.8rem] font-semibold tracking-[-0.04em] text-slate-950">
                             {ratingSummary?.avg_structural_rating ?? "-"}
                           </p>
-                          <p className="text-xs text-slate-500">Structural rating</p>
+                          <p className="text-[11px] text-slate-500">Structural rating</p>
                         </div>
-                        <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                          <p className="text-2xl font-semibold tracking-[-0.05em] text-slate-950">
+                        <div className="rounded-lg bg-slate-50 px-3 py-2.5">
+                          <p className="text-[1.8rem] font-semibold tracking-[-0.04em] text-slate-950">
                             {ratingSummary?.overall_health || "Unrated"}
                           </p>
-                          <p className="text-xs text-slate-500">Health status</p>
+                          <p className="text-[11px] text-slate-500">Health status</p>
                         </div>
-                        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#fffbeb_100%)] px-4 py-3">
-                          <div>
-                            <p className="text-2xl font-semibold tracking-[-0.05em] text-slate-950">Open</p>
-                            <p className="text-xs text-slate-500">View details</p>
+                        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                          <div className="min-w-0">
+                            <p className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Open</p>
+                            <p className="text-[11px] text-slate-500">View details</p>
                           </div>
-                          <ArrowRight className="h-5 w-5 text-slate-400" />
+                          <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
                         </div>
                       </div>
                     </div>
@@ -314,14 +310,14 @@ export function StructuresPage() {
             );
           })}
         </div>
-        <div className="mt-5 flex flex-col gap-3 rounded-[24px] border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-500">
             Page <span className="font-semibold text-slate-900">{page}</span> of{" "}
             <span className="font-semibold text-slate-900">{totalPages}</span>
           </p>
           <div className="flex items-center gap-2">
             <Button
-              className="rounded-full px-4"
+              className="rounded-md px-4"
               disabled={!canGoPrevious}
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               variant="outline"
@@ -330,7 +326,7 @@ export function StructuresPage() {
               Previous
             </Button>
             <Button
-              className="rounded-full px-4"
+              className="rounded-md px-4"
               disabled={!canGoNext}
               onClick={() => setPage((current) => current + 1)}
               variant="outline"
