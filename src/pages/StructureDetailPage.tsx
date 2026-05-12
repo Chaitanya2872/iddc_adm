@@ -355,6 +355,27 @@ export function StructureDetailPage() {
     ];
   }, [locationData, structure]);
 
+  const mapCoordinates = useMemo(() => {
+    const latitude = locationData?.location?.latitude;
+    const longitude = locationData?.location?.longitude;
+
+    if (typeof latitude !== "number" || typeof longitude !== "number") {
+      return null;
+    }
+
+    return { latitude, longitude };
+  }, [locationData]);
+
+  const mapEmbedUrl = useMemo(() => {
+    if (!mapCoordinates) return "";
+    return `https://www.google.com/maps?q=${mapCoordinates.latitude},${mapCoordinates.longitude}&z=16&output=embed`;
+  }, [mapCoordinates]);
+
+  const mapOpenUrl = useMemo(() => {
+    if (!mapCoordinates) return "";
+    return `https://www.google.com/maps?q=${mapCoordinates.latitude},${mapCoordinates.longitude}`;
+  }, [mapCoordinates]);
+
   const structureDetails = useMemo(() => {
     if (!structure) return [];
 
@@ -702,7 +723,8 @@ export function StructureDetailPage() {
               </div>
 
               {activeTab === "location" ? (
-                <div className="grid gap-3 xl:grid-cols-2">
+                <div className="grid gap-3">
+                  <div className="grid gap-3 xl:grid-cols-2">
                   <Card className="rounded-[22px] border-slate-200 shadow-none">
                     <CardContent className="p-4">
                       <div className="mb-3 flex items-center justify-between">
@@ -739,6 +761,44 @@ export function StructureDetailPage() {
                           </div>
                         ))}
                       </div>
+                    </CardContent>
+                  </Card>
+                  </div>
+
+                  <Card className="rounded-[22px] border-slate-200 shadow-none">
+                    <CardContent className="p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <p className="admin-section-title">Map View</p>
+                        <MapPinned className="h-4 w-4 text-slate-400" />
+                      </div>
+                      {mapEmbedUrl ? (
+                        <>
+                          <div className="overflow-hidden rounded-[18px] border border-slate-200 bg-slate-50">
+                            <iframe
+                              className="h-[340px] w-full"
+                              loading="lazy"
+                              referrerPolicy="no-referrer-when-downgrade"
+                              src={mapEmbedUrl}
+                              title="Structure location map"
+                            />
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-3">
+                            <p className="text-sm text-slate-600">
+                              Coordinates: <span className="font-medium text-slate-900">{mapCoordinates?.latitude}</span>,{" "}
+                              <span className="font-medium text-slate-900">{mapCoordinates?.longitude}</span>
+                            </p>
+                            <Button asChild className="rounded-md px-4" variant="outline">
+                              <a href={mapOpenUrl} rel="noreferrer" target="_blank">
+                                Open in Maps
+                              </a>
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                          Latitude and longitude are not available for this structure yet.
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>

@@ -27,6 +27,11 @@ function formatDate(value?: string) {
   });
 }
 
+function hasMeaningfulHealth(value?: string | null) {
+  if (!value) return false;
+  return value.toLowerCase() !== "unrated";
+}
+
 export function StructuresPage() {
   const [structures, setStructures] = useState<AdminStructureCard[]>([]);
   const [stats, setStats] = useState<SystemStats | null>(null);
@@ -213,6 +218,7 @@ export function StructuresPage() {
         <div className="grid gap-4">
           {structures.map((structure, index) => {
             const ratingSummary = structure.ratings_summary;
+            const showHealthStatus = hasMeaningfulHealth(ratingSummary?.overall_health);
 
             return (
               <motion.div
@@ -275,7 +281,13 @@ export function StructuresPage() {
                         </div>
                       </div>
 
-                      <div className="grid gap-2 border-t border-slate-200 pt-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_150px]">
+                      <div
+                        className={`grid gap-2 border-t border-slate-200 pt-3 ${
+                          showHealthStatus
+                            ? "md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_150px]"
+                            : "md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_150px]"
+                        }`}
+                      >
                         <div className="rounded-lg bg-slate-50 px-3 py-2.5">
                           <p className="text-[1.8rem] font-semibold tracking-[-0.04em] text-slate-950">
                             {ratingSummary?.completion_percentage ?? 0}%
@@ -288,12 +300,14 @@ export function StructuresPage() {
                           </p>
                           <p className="text-[11px] text-slate-500">Structural rating</p>
                         </div>
-                        <div className="rounded-lg bg-slate-50 px-3 py-2.5">
-                          <p className="text-[1.8rem] font-semibold tracking-[-0.04em] text-slate-950">
-                            {ratingSummary?.overall_health || "Unrated"}
-                          </p>
-                          <p className="text-[11px] text-slate-500">Health status</p>
-                        </div>
+                        {showHealthStatus ? (
+                          <div className="rounded-lg bg-slate-50 px-3 py-2.5">
+                            <p className="text-[1.8rem] font-semibold tracking-[-0.04em] text-slate-950">
+                              {ratingSummary?.overall_health}
+                            </p>
+                            <p className="text-[11px] text-slate-500">Health status</p>
+                          </div>
+                        ) : null}
                         <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2.5">
                           <div className="min-w-0">
                             <p className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Open</p>
