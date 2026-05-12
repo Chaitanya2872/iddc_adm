@@ -6,6 +6,7 @@ import {
   Building2,
   Download,
   FileText,
+  ImageIcon,
   Home,
   Layers3,
   MapPinned,
@@ -57,6 +58,12 @@ function formatComponentLabel(value: string) {
   return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function getPhotoList(item: Record<string, unknown>) {
+  const photos = Array.isArray(item.photos) ? item.photos : [];
+  const singlePhoto = typeof item.photo === "string" && item.photo ? [item.photo] : [];
+  return [...singlePhoto, ...photos.filter((photo): photo is string => typeof photo === "string" && photo.trim().length > 0)];
+}
+
 function extractDetailedRatingGroups(ratingRecord?: Record<string, unknown> | null) {
   if (!ratingRecord) return [];
 
@@ -70,17 +77,133 @@ function extractDetailedRatingGroups(ratingRecord?: Record<string, unknown> | nu
     .map(([key, value]) => ({
       key,
       label: formatComponentLabel(key),
+      notes: typeof ratingRecord.inspector_notes === "string" ? ratingRecord.inspector_notes : "",
+      assessmentDate: typeof ratingRecord.assessment_date === "string" ? ratingRecord.assessment_date : "",
       items: (value as Array<Record<string, unknown>>).map((item) => ({
         name: typeof item.name === "string" ? item.name : "",
         rating: typeof item.rating === "number" ? item.rating : null,
         condition: typeof item.condition_comment === "string" ? item.condition_comment : "",
+        inspectorNotes: typeof item.inspector_notes === "string" ? item.inspector_notes : "",
         repair: typeof item.repair_methodology === "string" ? item.repair_methodology : "",
+        dimensions:
+          item.distress_dimensions && typeof item.distress_dimensions === "object"
+            ? [
+                typeof (item.distress_dimensions as { length?: unknown }).length === "number"
+                  ? `L ${String((item.distress_dimensions as { length?: number }).length)}`
+                  : "",
+                typeof (item.distress_dimensions as { breadth?: unknown }).breadth === "number"
+                  ? `B ${String((item.distress_dimensions as { breadth?: number }).breadth)}`
+                  : "",
+                typeof (item.distress_dimensions as { height?: unknown }).height === "number"
+                  ? `H ${String((item.distress_dimensions as { height?: number }).height)}`
+                  : "",
+                typeof (item.distress_dimensions as { unit?: unknown }).unit === "string"
+                  ? String((item.distress_dimensions as { unit?: string }).unit)
+                  : ""
+              ]
+                .filter(Boolean)
+                .join(" | ")
+            : "",
         distress:
           Array.isArray(item.distress_types) && item.distress_types.length
-            ? item.distress_types.map((entry) => String(entry)).join(", ")
-            : ""
+            ? item.distress_types.map((entry) => formatComponentLabel(String(entry))).join(", ")
+            : "",
+        photos: getPhotoList(item),
+        inspectionDate: typeof item.inspection_date === "string" ? item.inspection_date : ""
       }))
     }));
+}
+
+function RatingGroupPanel({
+  title,
+  groups
+}: {
+  title: string;
+  groups: Array<{
+    key: string;
+    label: string;
+    notes: string;
+    assessmentDate: string;
+    items: Array<{
+      name: string;
+      rating: number | null;
+      condition: string;
+      inspectorNotes: string;
+      repair: string;
+      dimensions: string;
+      distress: string;
+      photos: string[];
+      inspectionDate: string;
+    }>;
+  }>;
+}) {
+  return (
+    <div className="rounded-[18px] border border-slate-200 bg-white p-3">
+      <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-slate-400">{title}</p>
+      <div className="mt-3 space-y-3">
+        {groups.length ? (
+          groups.map((group) => (
+            <div key={group.key} className="rounded-[14px] border border-slate-200 bg-slate-50 p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{group.label}</p>
+                  {group.assessmentDate ? <p className="mt-1 text-[11px] text-slate-500">Assessed {formatDate(group.assessmentDate)}</p> : null}
+                </div>
+                <Badge>{group.items.length} items</Badge>
+              </div>
+              {group.notes ? <p className="mt-2 text-xs leading-5 text-slate-500">Section notes: {group.notes}</p> : null}
+              <div className="mt-3 grid gap-2">
+                {group.items.map((item, index) => (
+                  <div className="rounded-[12px] border border-slate-200 bg-white p-3" key={`${group.key}-${index}`}>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900">{item.name || `${group.label} ${index + 1}`}</p>
+                        {item.inspectionDate ? <p className="mt-1 text-[11px] text-slate-500">Inspected {formatDate(item.inspectionDate)}</p> : null}
+                      </div>
+                      <div className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                        Rating {item.rating ?? "-"}
+                      </div>
+                    </div>
+
+                    <div className="mt-2 grid gap-2 md:grid-cols-2">
+                      {item.distress ? <p className="rounded-md bg-slate-50 px-2.5 py-2 text-xs text-slate-600"><span className="font-medium text-slate-800">Distress Types:</span> {item.distress}</p> : null}
+                      {item.dimensions ? <p className="rounded-md bg-slate-50 px-2.5 py-2 text-xs text-slate-600"><span className="font-medium text-slate-800">Dimensions:</span> {item.dimensions}</p> : null}
+                      {item.condition ? <p className="rounded-md bg-slate-50 px-2.5 py-2 text-xs text-slate-600"><span className="font-medium text-slate-800">Condition:</span> {item.condition}</p> : null}
+                      {item.repair ? <p className="rounded-md bg-slate-50 px-2.5 py-2 text-xs text-slate-600"><span className="font-medium text-slate-800">Repair:</span> {item.repair}</p> : null}
+                    </div>
+
+                    {item.inspectorNotes ? <p className="mt-2 text-xs leading-5 text-slate-500">Notes: {item.inspectorNotes}</p> : null}
+
+                    {item.photos.length ? (
+                      <div className="mt-3">
+                        <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
+                          <ImageIcon className="h-3.5 w-3.5" />
+                          Images
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                          {item.photos.map((photo, photoIndex) => (
+                            <a className="group overflow-hidden rounded-lg border border-slate-200 bg-slate-100" href={photo} key={`${group.key}-${index}-${photoIndex}`} rel="noreferrer" target="_blank">
+                              <img
+                                alt={`${item.name || group.label} ${photoIndex + 1}`}
+                                className="h-24 w-full object-cover transition-transform duration-150 group-hover:scale-[1.02]"
+                                src={photo}
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-slate-500">No detailed ratings available.</p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function StructureDetailPage() {
@@ -734,14 +857,6 @@ export function StructureDetailPage() {
                             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Priority</p>
                             <p className="mt-1 text-sm font-medium text-slate-900">{flat.priority || " "}</p>
                           </div>
-                          <div className="rounded-2xl bg-white px-3 py-2">
-                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Structural Avg</p>
-                            <p className="mt-1 text-sm font-medium text-slate-900">{flat.structuralAverage || " "}</p>
-                          </div>
-                          <div className="rounded-2xl bg-white px-3 py-2">
-                            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Non-Structural Avg</p>
-                            <p className="mt-1 text-sm font-medium text-slate-900">{flat.nonStructuralAverage || " "}</p>
-                          </div>
                         </div>
                         {flat.notes ? <p className="mt-3 text-xs leading-5 text-slate-500">Notes: {flat.notes}</p> : null}
                       </div>
@@ -788,6 +903,41 @@ export function StructureDetailPage() {
                     </CardContent>
                   </Card>
 
+                  {floorWiseRatingRows.length ? (
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      {floorWiseRatingRows.map((floor) => (
+                        <div className="rounded-[18px] border border-slate-200 bg-white p-3" key={floor.id}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900">{floor.floorName}</p>
+                              <p className="mt-1 text-[11px] text-slate-500">Rated flats: {floor.ratedFlats}</p>
+                            </div>
+                            <FolderKanban className="h-4 w-4 text-slate-400" />
+                          </div>
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            <div className="rounded-xl bg-slate-50 px-2.5 py-2">
+                              <p className="text-[10px] uppercase tracking-[0.14em] text-slate-400">Overall</p>
+                              <p className="mt-1 text-sm font-semibold text-slate-900">{floor.overallAverage || " "}</p>
+                            </div>
+                            <div className="rounded-xl bg-slate-50 px-2.5 py-2">
+                              <p className="text-[10px] uppercase tracking-[0.14em] text-slate-400">Health</p>
+                              <p className="mt-1 text-sm font-semibold text-slate-900">{floor.healthStatus || " "}</p>
+                            </div>
+                            <div className="rounded-xl bg-slate-50 px-2.5 py-2">
+                              <p className="text-[10px] uppercase tracking-[0.14em] text-slate-400">Structural</p>
+                              <p className="mt-1 text-sm font-semibold text-slate-900">{floor.structuralAverage || " "}</p>
+                            </div>
+                            <div className="rounded-xl bg-slate-50 px-2.5 py-2">
+                              <p className="text-[10px] uppercase tracking-[0.14em] text-slate-400">Non-Structural</p>
+                              <p className="mt-1 text-sm font-semibold text-slate-900">{floor.nonStructuralAverage || " "}</p>
+                            </div>
+                          </div>
+                          {floor.priority ? <p className="mt-2 text-xs text-slate-500">Priority: {floor.priority}</p> : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
                   {detailedFloorRatings.length ? (
                     <div className="grid gap-4">
                       {detailedFloorRatings.map((floor) => (
@@ -802,7 +952,7 @@ export function StructureDetailPage() {
                             <FolderKanban className="h-4 w-4 text-slate-400" />
                           </div>
 
-                          <div className="mt-3 grid gap-2 md:grid-cols-6">
+                          <div className="mt-3 grid gap-2 md:grid-cols-3 xl:grid-cols-6">
                             <div className="rounded-2xl bg-white px-3 py-2">
                               <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Structural Avg</p>
                               <p className="mt-1 text-sm font-medium text-slate-900">{floor.structuralAverage || " "}</p>
@@ -830,53 +980,8 @@ export function StructureDetailPage() {
                           </div>
 
                           <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                            <div className="rounded-[18px] border border-slate-200 bg-white p-3">
-                              <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-slate-400">Structural Ratings</p>
-                              <div className="mt-3 space-y-3">
-                                {floor.structuralGroups.length ? floor.structuralGroups.map((group) => (
-                                  <div key={group.key} className="rounded-[16px] border border-slate-200 bg-slate-50 p-3">
-                                    <p className="text-sm font-medium text-slate-900">{group.label}</p>
-                                    <div className="mt-2 space-y-2">
-                                      {group.items.map((item, index) => (
-                                        <div className="rounded-[14px] bg-white px-3 py-2" key={`${group.key}-${index}`}>
-                                          <div className="flex items-center justify-between gap-3">
-                                            <p className="text-sm text-slate-900">{item.name || `${group.label} ${index + 1}`}</p>
-                                            <span className="text-xs font-medium text-slate-500">Rating {item.rating ?? "-"}</span>
-                                          </div>
-                                          {item.condition ? <p className="mt-1 text-xs text-slate-500">{item.condition}</p> : null}
-                                          {item.distress ? <p className="mt-1 text-xs text-slate-400">Distress: {item.distress}</p> : null}
-                                          {item.repair ? <p className="mt-1 text-xs text-slate-400">Repair: {item.repair}</p> : null}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )) : <p className="text-sm text-slate-500">No detailed structural ratings available.</p>}
-                              </div>
-                            </div>
-
-                            <div className="rounded-[18px] border border-slate-200 bg-white p-3">
-                              <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-slate-400">Non-Structural Ratings</p>
-                              <div className="mt-3 space-y-3">
-                                {floor.nonStructuralGroups.length ? floor.nonStructuralGroups.map((group) => (
-                                  <div key={group.key} className="rounded-[16px] border border-slate-200 bg-slate-50 p-3">
-                                    <p className="text-sm font-medium text-slate-900">{group.label}</p>
-                                    <div className="mt-2 space-y-2">
-                                      {group.items.map((item, index) => (
-                                        <div className="rounded-[14px] bg-white px-3 py-2" key={`${group.key}-${index}`}>
-                                          <div className="flex items-center justify-between gap-3">
-                                            <p className="text-sm text-slate-900">{item.name || `${group.label} ${index + 1}`}</p>
-                                            <span className="text-xs font-medium text-slate-500">Rating {item.rating ?? "-"}</span>
-                                          </div>
-                                          {item.condition ? <p className="mt-1 text-xs text-slate-500">{item.condition}</p> : null}
-                                          {item.distress ? <p className="mt-1 text-xs text-slate-400">Distress: {item.distress}</p> : null}
-                                          {item.repair ? <p className="mt-1 text-xs text-slate-400">Repair: {item.repair}</p> : null}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )) : <p className="text-sm text-slate-500">No detailed non-structural ratings available.</p>}
-                              </div>
-                            </div>
+                            <RatingGroupPanel groups={floor.structuralGroups} title="Structural Ratings" />
+                            <RatingGroupPanel groups={floor.nonStructuralGroups} title="Non-Structural Ratings" />
                           </div>
                         </div>
                       ))}

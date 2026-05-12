@@ -33,22 +33,22 @@ export function AppShell({ children, searchValue = "", onSearchChange, action }:
       style={{ gridTemplateColumns: expanded ? "220px minmax(0,1fr)" : "76px minmax(0,1fr)" }}
     >
       <aside
-        className="sticky top-0 flex h-screen flex-col gap-3 border-r border-slate-800 bg-slate-900 px-3 py-4 text-slate-100"
+        className="sticky top-0 flex h-screen flex-col gap-3 border-r border-slate-700 bg-slate-800 px-3 py-4 text-slate-100"
         onMouseEnter={() => setExpanded(true)}
         onMouseLeave={() => setExpanded(false)}
       >
         <Link
           className={cn(
-            "flex h-12 items-center overflow-hidden transition-all duration-200",
-            expanded ? "justify-start px-2" : "justify-center"
+            "flex h-12 items-center overflow-hidden rounded-md border border-slate-600 bg-white/95 transition-all duration-200",
+            expanded ? "justify-start px-3" : "justify-center px-2"
           )}
           to="/structures"
         >
           <img
             alt="IDDC"
             className={cn(
-              "h-9 w-auto max-w-none object-contain transition-all duration-200",
-              expanded ? "opacity-100" : "scale-90 opacity-100"
+              "w-auto max-w-none object-contain transition-all duration-200",
+              expanded ? "h-8 opacity-100" : "h-7 opacity-100"
             )}
             src="/iddc-logo.png"
           />
@@ -60,9 +60,9 @@ export function AppShell({ children, searchValue = "", onSearchChange, action }:
             return (
               <Link
                 className={cn(
-                  "flex h-11 items-center gap-3 overflow-hidden rounded-md border border-transparent px-3 text-slate-400 transition-colors duration-150 hover:bg-slate-800 hover:text-slate-100",
-                  !expanded && "w-10 justify-center self-center px-0",
-                  active && "border-slate-700 bg-slate-800 text-slate-50"
+                  "flex h-11 items-center gap-3 overflow-hidden rounded-md border border-transparent px-3 text-slate-300 transition-colors duration-150 hover:bg-slate-700 hover:text-white",
+                  !expanded && "w-10 justify-center self-center px-0 text-slate-200",
+                  active && "border-slate-600 bg-slate-700 text-white"
                 )}
                 key={`${item.label}-${index}`}
                 to={item.href}
@@ -82,8 +82,8 @@ export function AppShell({ children, searchValue = "", onSearchChange, action }:
         </nav>
         <button
           className={cn(
-            "mt-auto flex h-11 items-center gap-3 overflow-hidden rounded-md border border-slate-800 px-3 text-slate-400 transition-colors duration-150 hover:bg-slate-800 hover:text-slate-100",
-            !expanded && "w-10 justify-center self-center px-0"
+            "mt-auto flex h-11 items-center gap-3 overflow-hidden rounded-md border border-slate-700 px-3 text-slate-300 transition-colors duration-150 hover:bg-slate-700 hover:text-white",
+            !expanded && "w-10 justify-center self-center px-0 text-slate-200"
           )}
           onClick={handleLogout}
           type="button"
