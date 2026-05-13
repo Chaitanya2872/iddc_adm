@@ -139,7 +139,7 @@ export function StructuresPage() {
               Structure administration
             </div>
             <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.04em] text-slate-950 md:text-4xl">
-              All structures
+              ManageStructures
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
               Browse every structure owned by the admin workspace and open each one into a focused detail view.
