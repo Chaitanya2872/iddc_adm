@@ -3,10 +3,10 @@ import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Building2, CalendarRange, Filter, MapPin, ShieldCheck, User2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
+import { DateRangePicker } from "@/components/DateRangePicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import type { AdminStructureCard, SystemStats } from "@/types";
 
@@ -162,22 +162,10 @@ export function StructuresPage() {
             <Filter className="h-4 w-4" />
             Filters
           </Button>
-          <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-            <CalendarRange className="h-4 w-4 text-slate-400" />
-            <Input
-              className="h-auto w-[132px] border-0 bg-transparent p-0 text-sm shadow-none focus:border-0 focus:ring-0"
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-            />
-            <span className="text-xs text-slate-400">to</span>
-            <Input
-              className="h-auto w-[132px] border-0 bg-transparent p-0 text-sm shadow-none focus:border-0 focus:ring-0"
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-            />
-          </div>
+          <DateRangePicker from={dateFrom} onApply={({ from, to }) => {
+            setDateFrom(from);
+            setDateTo(to);
+          }} to={dateTo} />
           <div className="inline-flex rounded-md border border-slate-200 bg-slate-100 p-1">
             {statusTabs.map((item) => (
               <button
