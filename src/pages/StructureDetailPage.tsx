@@ -64,6 +64,10 @@ function formatComponentLabel(value: string) {
   return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function findCustomFormatId(formats: TestingFormatOption[]) {
+  return formats.find((format) => format.is_custom)?.format_id ?? "";
+}
+
 function getPhotoList(item: Record<string, unknown>) {
   const photos = Array.isArray(item.photos) ? item.photos : [];
   const singlePhoto = typeof item.photo === "string" && item.photo ? [item.photo] : [];
@@ -237,6 +241,7 @@ export function StructureDetailPage() {
   const [panelSubmitting, setPanelSubmitting] = useState(false);
   const [panelError, setPanelError] = useState("");
   const [panelMessage, setPanelMessage] = useState("");
+  const customFormatId = useMemo(() => findCustomFormatId(testingFormats), [testingFormats]);
 
   useEffect(() => {
     let ignore = false;
@@ -656,6 +661,12 @@ export function StructureDetailPage() {
     setSelectedFormatIds(formatIds);
   }, [workflowData]);
 
+  useEffect(() => {
+    if (!customFormatId) return;
+
+    setSelectedFormatIds((current) => (current.includes(customFormatId) ? current : [customFormatId, ...current]));
+  }, [customFormatId]);
+
   const tabItems = [
     { key: "location", label: "Location", icon: MapPinned },
     { key: "floors", label: "Floors", icon: Layers3 },
@@ -710,6 +721,8 @@ export function StructureDetailPage() {
   };
 
   const toggleFormatSelection = (formatId: string) => {
+    if (formatId === customFormatId) return;
+
     setSelectedFormatIds((current) =>
       current.includes(formatId) ? current.filter((id) => id !== formatId) : [...current, formatId]
     );
@@ -724,7 +737,7 @@ export function StructureDetailPage() {
       setPanelMessage("");
       const response = await api.moveAdminStructureToTesting(id, {
         tester_ids: selectedTesterIds,
-        testing_formats: selectedFormatIds
+        testing_formats: Array.from(new Set([...(customFormatId ? [customFormatId] : []), ...selectedFormatIds]))
       });
       setWorkflowData(response.data || null);
       setStructure((current) =>
@@ -1300,6 +1313,7 @@ export function StructureDetailPage() {
                             </div>
                             <input
                               checked={selectedFormatIds.includes(format.format_id)}
+                              disabled={format.format_id === customFormatId}
                               onChange={() => toggleFormatSelection(format.format_id)}
                               type="checkbox"
                             />
@@ -1314,6 +1328,7 @@ export function StructureDetailPage() {
                         {selectedFormatItems.map((format) => (
                           <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700" key={format.format_id}>
                             {format.display_name}
+                            {format.format_id === customFormatId ? " (Mandatory)" : ""}
                           </span>
                         ))}
                       </div>

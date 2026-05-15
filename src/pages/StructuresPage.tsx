@@ -30,7 +30,6 @@ function formatDate(value?: string) {
 function getStructureLocationLabel(structure: AdminStructureCard) {
   const city =
     structure.location?.city ||
-    structure.location?.city_name ||
     "";
   const state =
     structure.location?.state ||
