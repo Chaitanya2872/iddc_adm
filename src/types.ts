@@ -371,6 +371,35 @@ export interface AdminRatingsResponse {
   floors?: AdminFloorRatingsItem[];
 }
 
+export interface AdminStructureTestResultItem {
+  scope?: "structure" | "floor" | "flat" | "block" | string;
+  location_label?: string;
+  floor_id?: string | null;
+  flat_id?: string | null;
+  block_id?: string | null;
+  test_id?: string;
+  test_name?: string;
+  component_type?: string;
+  component_id?: string;
+  test_date?: string | null;
+  tested_by?: string;
+  remarks?: string;
+  test_results?: Record<string, unknown>;
+  test_report_pdf?: {
+    filename?: string;
+    file_path?: string;
+    uploaded_at?: string;
+  } | null;
+}
+
+export interface AdminStructureTestsResponse {
+  structure_id?: string;
+  uid?: string;
+  structural_identity_number?: string;
+  total?: number;
+  results?: AdminStructureTestResultItem[];
+}
+
 export interface SystemStats {
   structures?: {
     total?: number;

@@ -6,6 +6,7 @@ import type {
   AdminFloorsResponse,
   AdminLocationResponse,
   AdminRatingsResponse,
+  AdminStructureTestsResponse,
   AdminUser,
   AdminUserPayload,
   StructureWorkflowResponse,
@@ -161,6 +162,8 @@ export const api = {
     request<AdminRatingsResponse>(`/api/admin/structures/${id}/ratings`),
   getAdminStructureWorkflow: (id: string) =>
     request<StructureWorkflowResponse>(`/api/admin/structures/${id}/workflow`),
+  getAdminStructureTestResults: (id: string) =>
+    request<AdminStructureTestsResponse>(`/api/admin/structures/${id}/test-results`),
   getAdminTesters: () => request<TestingAssignmentUser[]>("/api/admin/testers"),
   getAdminTestingFormats: () => request<TestingFormatOption[]>("/api/admin/testing-formats"),
   moveAdminStructureToTesting: (id: string, payload: { tester_ids: string[]; testing_formats: string[] }) =>

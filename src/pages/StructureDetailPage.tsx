@@ -29,6 +29,7 @@ import type {
   AdminLocationResponse,
   AdminRatingsResponse,
   AdminStructureDetail,
+  AdminStructureTestsResponse,
   StructureWorkflowResponse,
   TestingAssignmentUser,
   TestingFormatOption
@@ -62,6 +63,19 @@ function formatNumber(value?: number | null) {
 
 function formatComponentLabel(value: string) {
   return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function flattenMixedValue(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.map((item) => flattenMixedValue(item)).filter(Boolean).join(", ");
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, entry]) => `${formatComponentLabel(key)}: ${flattenMixedValue(entry)}`)
+      .filter((entry) => entry.trim().length > 0)
+      .join(" | ");
+  }
+  return "";
 }
 
 function findCustomFormatId(formats: TestingFormatOption[]) {
@@ -225,11 +239,12 @@ export function StructureDetailPage() {
   const [flatsData, setFlatsData] = useState<AdminFlatsResponse | null>(null);
   const [ratingsData, setRatingsData] = useState<AdminRatingsResponse | null>(null);
   const [workflowData, setWorkflowData] = useState<StructureWorkflowResponse | null>(null);
+  const [testsData, setTestsData] = useState<AdminStructureTestsResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [downloadError, setDownloadError] = useState<string>("");
   const [downloading, setDownloading] = useState<"pdf" | "word" | "">("");
-  const [activeTab, setActiveTab] = useState<"location" | "floors" | "flats" | "ratings">("location");
+  const [activeTab, setActiveTab] = useState<"location" | "floors" | "flats" | "ratings" | "tests">("location");
   const [selectedRatingFloorId, setSelectedRatingFloorId] = useState<string>("");
   const [testingPanelOpen, setTestingPanelOpen] = useState(false);
   const [testers, setTesters] = useState<TestingAssignmentUser[]>([]);
@@ -250,7 +265,7 @@ export function StructureDetailPage() {
       try {
         setLoading(true);
         setError("");
-        const [detailResponse, locationResponse, administrativeResponse, floorsResponse, flatsResponse, ratingsResponse, workflowResponse] =
+        const [detailResponse, locationResponse, administrativeResponse, floorsResponse, flatsResponse, ratingsResponse, workflowResponse, testsResponse] =
           await Promise.all([
             api.getAdminStructure(id),
             api.getAdminStructureLocation(id),
@@ -258,7 +273,8 @@ export function StructureDetailPage() {
             api.getAdminStructureFloors(id),
             api.getAdminStructureFlats(id),
             api.getAdminStructureRatings(id),
-            api.getAdminStructureWorkflow(id)
+            api.getAdminStructureWorkflow(id),
+            api.getAdminStructureTestResults(id)
           ]);
 
         if (!ignore) {
@@ -269,6 +285,7 @@ export function StructureDetailPage() {
           setFlatsData(flatsResponse.data || null);
           setRatingsData(ratingsResponse.data || null);
           setWorkflowData(workflowResponse.data || null);
+          setTestsData(testsResponse.data || null);
         }
       } catch (loadError) {
         if (!ignore) {
@@ -671,8 +688,26 @@ export function StructureDetailPage() {
     { key: "location", label: "Location", icon: MapPinned },
     { key: "floors", label: "Floors", icon: Layers3 },
     { key: "flats", label: "Flats", icon: Home },
-    { key: "ratings", label: "Floor Wise Ratings", icon: Activity }
+    { key: "ratings", label: "Floor Wise Ratings", icon: Activity },
+    { key: "tests", label: "Tests Conducted", icon: FolderKanban }
   ] as const;
+
+  const testSummaries = useMemo(() => {
+    const results = testsData?.results || [];
+    const scopeCounts = results.reduce<Record<string, number>>((acc, item) => {
+      const key = item.scope || "unknown";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      total: testsData?.total ?? results.length,
+      formats: new Set(results.map((item) => item.test_name).filter(Boolean)).size,
+      attachments: results.filter((item) => item.test_report_pdf?.file_path).length,
+      latestDate: results.find((item) => item.test_date)?.test_date || "",
+      scopeCounts
+    };
+  }, [testsData]);
 
   const handleDownload = async (format: "pdf" | "word") => {
     if (!id) return;
@@ -1218,6 +1253,102 @@ export function StructureDetailPage() {
                     </div>
                   )}
                 </div>
+              ) : null}
+
+              {activeTab === "tests" ? (
+                testsData?.results?.length ? (
+                  <div className="grid gap-4">
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      <Card className="rounded-[20px] border-slate-200 shadow-none">
+                        <CardContent className="p-4">
+                          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">Total Tests</p>
+                          <p className="mt-2 text-[1.55rem] font-medium tracking-[-0.04em] text-slate-950">{testSummaries.total}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="rounded-[20px] border-slate-200 shadow-none">
+                        <CardContent className="p-4">
+                          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">Formats Used</p>
+                          <p className="mt-2 text-[1.55rem] font-medium tracking-[-0.04em] text-slate-950">{testSummaries.formats}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="rounded-[20px] border-slate-200 shadow-none">
+                        <CardContent className="p-4">
+                          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">Attachments</p>
+                          <p className="mt-2 text-[1.55rem] font-medium tracking-[-0.04em] text-slate-950">{testSummaries.attachments}</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="rounded-[20px] border-slate-200 shadow-none">
+                        <CardContent className="p-4">
+                          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">Latest Test Date</p>
+                          <p className="mt-2 text-sm font-medium text-slate-950">{formatDate(testSummaries.latestDate) || " "}</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      {Object.entries(testSummaries.scopeCounts).map(([scope, count]) => (
+                        <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3" key={scope}>
+                          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">{formatComponentLabel(scope)}</p>
+                          <p className="mt-2 text-lg font-medium text-slate-950">{count}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid gap-3">
+                      {testsData.results.map((item) => (
+                        <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4" key={item.test_id || `${item.scope}-${item.component_id}-${item.test_date}`}>
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <div className="flex flex-wrap gap-2">
+                                <Badge>{formatComponentLabel(item.test_name || "test")}</Badge>
+                                {item.scope ? <Badge>{formatComponentLabel(item.scope)}</Badge> : null}
+                              </div>
+                              <p className="mt-2 text-base font-medium text-slate-950">{item.location_label || "Unknown location"}</p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                {formatComponentLabel(item.component_type || "component")}
+                                {item.component_id ? ` | ${item.component_id}` : ""}
+                              </p>
+                            </div>
+                            <div className="text-right text-xs text-slate-500">
+                              <p>{formatDate(item.test_date) || "No test date"}</p>
+                              <p className="mt-1">{item.tested_by || "Unknown tester"}</p>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 grid gap-2">
+                            <div className="rounded-[16px] border border-slate-200 bg-white px-3 py-3">
+                              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Results</p>
+                              <p className="mt-2 text-sm leading-6 text-slate-700">{flattenMixedValue(item.test_results) || "No structured result values provided."}</p>
+                            </div>
+                            {item.remarks ? (
+                              <div className="rounded-[16px] border border-slate-200 bg-white px-3 py-3">
+                                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Remarks</p>
+                                <p className="mt-2 text-sm leading-6 text-slate-700">{item.remarks}</p>
+                              </div>
+                            ) : null}
+                            {item.test_report_pdf?.file_path ? (
+                              <div className="rounded-[16px] border border-slate-200 bg-white px-3 py-3">
+                                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">Attachment</p>
+                                <a
+                                  className="mt-2 inline-flex text-sm font-medium text-slate-700 underline-offset-4 hover:text-slate-950 hover:underline"
+                                  href={item.test_report_pdf.file_path}
+                                  rel="noreferrer"
+                                  target="_blank"
+                                >
+                                  {item.test_report_pdf.filename || "Open attachment"}
+                                </a>
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-[20px] border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+                    No test results have been recorded for this structure yet.
+                  </div>
+                )
               ) : null}
             </CardContent>
           </Card>
